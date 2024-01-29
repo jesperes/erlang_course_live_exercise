@@ -1,0 +1,6 @@
+-sname myservice
+
+-setcookie myservice_cookie
+
++K true
++A30
