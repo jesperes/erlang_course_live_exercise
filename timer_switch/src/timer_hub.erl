@@ -2,6 +2,8 @@
 
 -behaviour(gen_server).
 
+-include_lib("kernel/include/logger.hrl").
+
 %% API
 -export([ start_link/0
         , stop/0
@@ -70,8 +72,9 @@ handle_call(i, _From, State) ->
               {FsmState, _Data} = sys:get_state(Name),
               io_lib:format("Timer switch:~n"
                             "\tName: ~ts~n"
+                            "\tPid: ~w~n"
                             "\tState: ~ts~n",
-                            [Name, FsmState])
+                            [Name, whereis(Name), FsmState])
           end, Switches)
     end,
 
@@ -112,7 +115,11 @@ handle_cast(_Request, State) ->
   {noreply, State}.
 
 handle_info({'EXIT', _Pid, normal}, State) ->
+  {noreply, State};
+handle_info(Request, State) ->
+  ?LOG_ERROR("Unexpected info event: ~p", [Request]),
   {noreply, State}.
+
 
 terminate(_Reason, _State) ->
   ok.

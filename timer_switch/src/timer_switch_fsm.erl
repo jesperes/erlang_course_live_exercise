@@ -55,7 +55,11 @@ handle_event({call, From}, State, State, Data) ->
   {next_state, State, Data, {reply, From, ok}};
 handle_event({call, From}, NewState, OldState, Data) ->
   {next_state, OldState, Data + 1,
-   {reply, From, {error, invalid_state_transition, OldState, NewState}}}.
+   {reply, From, {error, invalid_state_transition, OldState, NewState}}};
+
+handle_event(info, Request, State, Data) ->
+  ?LOG_ERROR("Info event received by fsm: ~p~n", [Request]),
+  {next_state, State, Data}.
 
 terminate(_Reason, _State, _Data) ->
   void.
