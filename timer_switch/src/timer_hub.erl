@@ -43,7 +43,6 @@ countdown(Name, Msecs) ->
 
 init([]) ->
   process_flag(trap_exit, true),
-  io:format("timer_hub starting!~n", []),
   {ok, #state{}}.
 
 handle_call({disconnect, Name}, _From, State) ->
@@ -58,7 +57,6 @@ handle_call({connect, Name}, _From, State) ->-
     {error, _} = Error ->
       {reply, Error, State};
     {ok, Pid} ->
-      io:format("Started new timer switch ~p~n", [Pid]),
       {reply, ok, State}
   end;
 handle_call({Action, Name}, _From, State) when Action =:= on orelse
@@ -78,18 +76,12 @@ handle_call({countdown, Name, Time}, _From, State) ->
   end.
 
 handle_cast(Request, State) ->
-  io:format("Undefined cast: ~p~n", [Request]),
   {noreply, State}.
 
 handle_info({'EXIT', _Pid, normal}, State) ->
   {noreply, State}.
 
-%handle_info(Info, State) ->
-%  io:format("Info: ~p~n", [Info]),
-%  {noreply, State}.
-
 terminate(_Reason, _State) ->
-  io:format("timer_hub terminating~n", []),
   ok.
 
 format_status(_Opt, Status) ->

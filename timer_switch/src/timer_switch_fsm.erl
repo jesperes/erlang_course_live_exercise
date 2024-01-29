@@ -30,11 +30,9 @@ callback_mode() ->
 
 init([]) ->
   process_flag(trap_exit, true),
-  io:format("Starting fsm: ~p~n", [self()]),
   {ok, off, 0}.
 
 handle_event(cast, {countdown, Time}, State, Data) ->
-  io:format("Countdown: ~p~n", [Time]),
   {next_state, State, Data, {timeout, Time, countdown}};
 handle_event(timeout, countdown, State, Data) ->
   NewState =
