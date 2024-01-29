@@ -10,6 +10,7 @@
         , on/1
         , off/1
         , countdown/2
+        , i/0
         ]).
 
 %% gen_server callbacks
@@ -41,22 +42,54 @@ stop() ->
 countdown(Name, Msecs) ->
   gen_server:call(?SERVER, {countdown, Name, Msecs}).
 
+i() ->
+  gen_server:call(?SERVER, i).
+
 init([]) ->
   process_flag(trap_exit, true),
   {ok, #state{}}.
 
+handle_call(i, _From, State) ->
+  {links, Links} = process_info(self(), links),
+  Switches =
+    lists:filtermap(
+      fun(Pid) ->
+          {registered_name, Name} = process_info(Pid, registered_name),
+          case Name of
+            timer_switch_sup -> false;
+            _ -> {true, Name}
+          end
+      end, Links),
+
+  Str =
+    if length(Switches) == 0 ->
+        "No timer switches defined.";
+       true ->
+        lists:map(
+          fun(Name) ->
+              {FsmState, _Data} = sys:get_state(Name),
+              io_lib:format("Timer switch:~n"
+                            "\tName: ~ts~n"
+                            "\tState: ~ts~n",
+                            [Name, FsmState])
+          end, Switches)
+    end,
+
+  io:format("~ts~n", [Str]),
+  {reply, ok, State};
 handle_call({disconnect, Name}, _From, State) ->
   case whereis(Name) of
-    undefined -> {reply, {no_such_switch, Name}, State};
+    undefined ->
+      {reply, {no_such_switch, Name}, State};
     Pid ->
       exit(Pid, normal),
       {reply, ok, State}
   end;
-handle_call({connect, Name}, _From, State) ->-
+handle_call({connect, Name}, _From, State) ->
   case timer_switch_fsm:start_link(Name) of
     {error, _} = Error ->
       {reply, Error, State};
-    {ok, Pid} ->
+    {ok, _Pid} ->
       {reply, ok, State}
   end;
 handle_call({Action, Name}, _From, State) when Action =:= on orelse
@@ -75,7 +108,7 @@ handle_call({countdown, Name, Time}, _From, State) ->
       {reply, {no_such_switch, Name}, State}
   end.
 
-handle_cast(Request, State) ->
+handle_cast(_Request, State) ->
   {noreply, State}.
 
 handle_info({'EXIT', _Pid, normal}, State) ->

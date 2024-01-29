@@ -2,6 +2,8 @@
 
 -behaviour(gen_statem).
 
+-include_lib("kernel/include/logger.hrl").
+
 %% API
 -export([ start_link/1
         , on/1
@@ -26,12 +28,15 @@ countdown(Name, Time) ->
   gen_statem:cast(Name, {countdown, Time}).
 
 callback_mode() ->
-  handle_event_function.
+  [handle_event_function, state_enter].
 
 init([]) ->
   process_flag(trap_exit, true),
   {ok, off, 0}.
 
+handle_event(enter, OldState, State, Data) ->
+  ?LOG_INFO("State transition: ~p -> ~p", [OldState, State]),
+  {next_state, State, Data};
 handle_event(cast, {countdown, Time}, State, Data) ->
   {next_state, State, Data, {timeout, Time, countdown}};
 handle_event(timeout, countdown, State, Data) ->
